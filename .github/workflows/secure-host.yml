@@ -1,0 +1,50 @@
+# A job with no agent: it secures the runner, then runs a script this
+# repository does not trust as the sandbox user, then builds and runs a
+# container there. After agentic-job's README and docs/secure-host.md.
+name: secure-host
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  untrusted:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 30
+    steps:
+      # The default checkout, which leaves the job's token in .git/config.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: sudo apt-get update && sudo apt-get install -y podman uidmap   # root: before the step
+      - uses: cgwalters-forge/agentic-job/secure-host@45efe1233ce2ba8300318cb71fe6b866953972b6
+      - name: The runner's user has no root
+        run: |
+          if sudo -n true; then echo "::error::sudo still works"; exit 1; fi
+      - run: git archive --prefix=src/ HEAD | agentic-job sandbox exec -- tar -x
+      - name: Untrusted script, sandboxed
+        shell: agentic-job sandbox exec --stdin {0} -- bash -eo pipefail -s
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: cd src && bash ./ci/untrusted.sh < /dev/null
+      - name: Build and run a container, sandboxed
+        shell: agentic-job sandbox exec --stdin {0} -- bash -eo pipefail -s
+        run: |
+          cd src/ci/container
+          podman info --format '{{.Host.Security.Rootless}} {{.Store.GraphDriverName}}' < /dev/null
+          podman build -t hello . < /dev/null
+          podman run --rm hello < /dev/null
+          ls -l /dev/kvm || true
+          test -w /dev/kvm && echo "kvm: writable" || echo "kvm: not writable"
+      - name: Build a container that needs the network, sandboxed
+        continue-on-error: true
+        shell: agentic-job sandbox exec --stdin {0} -- bash -eo pipefail -s
+        run: |
+          cd src/ci/container
+          env | grep -i -E '^(https?|no)_proxy=|^SSL_CERT|^REQUESTS_CA|^CURL_CA' || true
+          podman build -t net -f Containerfile.net . < /dev/null
+          podman run --rm net < /dev/null
+      - name: The same, on the host's network
+        continue-on-error: true
+        shell: agentic-job sandbox exec --stdin {0} -- bash -eo pipefail -s
+        run: |
+          cd src/ci/container
+          podman build --network=host -t net -f Containerfile.net . < /dev/null
+          podman run --rm net < /dev/null

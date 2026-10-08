@@ -1,0 +1,28 @@
+name: Label review
+on:
+  issues:
+    types: [labeled]
+  pull_request_target:
+    types: [labeled]
+permissions: {}
+jobs:
+  run:
+    if: github.event.label.name == 'agent-review'
+    concurrency:
+      group: label-review-${{ github.event.issue.number || github.event.pull_request.number }}
+      cancel-in-progress: false
+    uses: cgwalters-forge/agentic-job/.github/workflows/agentic-job.yml@45efe1233ce2ba8300318cb71fe6b866953972b6
+    permissions:
+      contents: read
+      id-token: write
+      issues: write
+      pull-requests: write
+    with:
+      id: label-${{ github.event.issue.number || github.event.pull_request.number }}
+      repo: ${{ github.repository }}
+      event: true
+      allow: workflow/label-review.toml
+      config: .github/agentic-job/hosted.toml
+      task: Review the triggering item and report findings.
+      agent: fake
+      max-requests: '0'
