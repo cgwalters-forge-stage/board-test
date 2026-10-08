@@ -1,0 +1,43 @@
+# A real agent, as far as it goes without an inference proxy this
+# repository's runners can reach: the README's call, with the lines
+# example.yml gives for claude.
+name: real
+run-name: real agent ${{ inputs.item }}
+on:
+  workflow_dispatch:
+    inputs:
+      item:
+        type: string
+        default: real
+      task:
+        type: string
+        required: true
+      npm:
+        description: The agent's programs, NAME@VERSION
+        type: string
+        default: ""
+permissions: {}
+jobs:
+  run:
+    concurrency:
+      group: agent-${{ inputs.item }}
+    uses: cgwalters-forge/agentic-job/.github/workflows/agentic-job.yml@45efe1233ce2ba8300318cb71fe6b866953972b6
+    permissions:
+      id-token: write
+      contents: write
+      issues: write
+      pull-requests: write
+    with:
+      id: ${{ inputs.item }}
+      task: ${{ inputs.task }}
+      repo: ${{ github.repository }}
+      outputs: create_pull_request,noop
+      allow: .github/agentic-job/allow.toml
+      config: .github/agentic-job/hosted.toml
+      agent: claude
+      npm: ${{ inputs.npm }}
+      inference-url: ${{ vars.INFERENCE_URL }}
+      inference-audience: ${{ vars.INFERENCE_AUDIENCE }}
+      max-requests: "150"
+      timeout: "10"
+      refused-pull-request: branch
