@@ -48,3 +48,11 @@ jobs:
           cd src/ci/container
           podman build --network=host -t net -f Containerfile.net . < /dev/null
           podman run --rm net < /dev/null
+      - name: The same, on the host's network with the proxy's certificate
+        continue-on-error: true
+        shell: agentic-job sandbox exec --stdin {0} -- bash -eo pipefail -s
+        run: |
+          cd src/ci/container
+          podman build --network=host -v /etc/egress-proxy/ca-bundle.pem:/etc/ssl/certs/ca-certificates.crt:ro -t net -f Containerfile.net . < /dev/null
+          podman run --rm net < /dev/null
+          podman run --rm --network=host -v /etc/egress-proxy/ca-bundle.pem:/etc/ssl/certs/ca-certificates.crt:ro -e https_proxy -e http_proxy docker.io/library/alpine:3.22 wget -q -O - https://api.github.com/zen < /dev/null

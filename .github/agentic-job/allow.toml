@@ -15,6 +15,11 @@ max_outputs = 5
 max_patch_bytes = 1048576
 max_patch_files = 50
 
+# README.md is on the default protected list; this repository lets a run change it.
+[unprotected_files]
+repos = ["cgwalters-forge-stage/board-test"]
+files = ["README.md"]
+
 # The output types a run may ask for, and the most of each.
 [outputs]
 create_pull_request = { max = 1 }

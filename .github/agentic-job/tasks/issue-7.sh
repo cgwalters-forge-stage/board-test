@@ -16,7 +16,7 @@ cat > "$HOME/.config/fake-agent/demo.json" <<'JSON'
   {
     "execute": {
       "title": "Bash",
-      "command": "mkdir -p tests && printf '#!/bin/sh\\nset -eu\\nbash -n \"$(dirname \"$0\")/../ci/untrusted.sh\"\\necho ok\\n' > tests/untrusted.sh && chmod +x tests/untrusted.sh && sh tests/untrusted.sh"
+      "command": "mkdir -p tests && printf '#!/bin/sh\\nset -eu\\nbash -n \"$(dirname \"$0\")/../ci/untrusted.sh\"\\necho ok\\n' > tests/untrusted.sh && sh tests/untrusted.sh"
     }
   },
   {
