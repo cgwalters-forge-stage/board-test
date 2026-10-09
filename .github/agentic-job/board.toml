@@ -1,4 +1,4 @@
-# Bounds a board repair job would want: agent-board's proposal types.
+# Bounds for board repairs: agent-board's proposals, applied to project 2.
 hosts = ["github.com"]
 repos = ["cgwalters-forge-stage/board-test"]
 bases = ["main"]
@@ -7,6 +7,9 @@ max_patch_bytes = 1024
 max_patch_files = 1
 
 [outputs]
-update_project = { max = 3 }
-close_issue = { max = 2 }
 noop = { max = 1 }
+
+[outputs.update_project]
+max = 3
+projects = ["https://github.com/orgs/cgwalters-forge-stage/projects/2"]
+fields = ["Status", "Turn", "Run", "Result"]

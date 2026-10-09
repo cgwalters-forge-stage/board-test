@@ -1,0 +1,50 @@
+# agent-board's proposals (`reconcile plan --emit`, `run record`) handed to
+# agentic-job's check and apply, after docs/workflow.md "Proposals from a
+# non-agent job". The producer here only uploads a committed file: running
+# agent-board in the job would need a token that can read the project.
+name: board-apply
+run-name: board-apply ${{ inputs.file }}
+on:
+  workflow_dispatch:
+    inputs:
+      file:
+        description: A committed proposals file
+        type: string
+        default: board/reconcile.jsonl
+      environment:
+        description: The apply environment holding AGENTIC_JOB_APPLY_TOKEN (empty for the job token)
+        type: string
+        default: ""
+permissions: {}
+jobs:
+  proposals:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - env:
+          FILE: ${{ inputs.file }}
+        run: mkdir out && cp -- "$FILE" out/outputs.jsonl && cat out/outputs.jsonl
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: board-proposals
+          path: out/outputs.jsonl
+          if-no-files-found: error
+  apply:
+    needs: proposals
+    uses: cgwalters-forge/agentic-job/.github/workflows/agentic-job.yml@01a508f539c1cecd81773f94c06c34061a9fe466
+    permissions:
+      contents: read
+      issues: write
+      id-token: write
+    with:
+      id: board
+      repo: cgwalters-forge-stage/board-test
+      allow: .github/agentic-job/board.toml
+      outputs: update_project,noop
+      max-outputs: "3"
+      proposals-artifact: board-proposals
+      apply-environment: ${{ inputs.environment }}
