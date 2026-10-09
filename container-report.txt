@@ -1,0 +1,53 @@
+runner-sandbox
+rootless=true driver=overlay
+crw-rw---- 1 root kvm 10, 232 Oct  9 03:06 /dev/kvm
+## plain build and run
+STEP 1/3: FROM docker.io/library/busybox:1.37
+Trying to pull docker.io/library/busybox:1.37...
+Getting image source signatures
+Copying blob sha256:68fe9bff2ad4ad46da3e58db03faa64eb73c0ff16d546b0c42539eaa9854cb7f
+Copying config sha256:30ecbe1509090b38ef3260f3609d64d8261230464eaa4d235901db496e9647fb
+Writing manifest to image destination
+STEP 2/3: RUN echo "built in a rootless container as $(id -un)" > /hello
+--> 9c707cfc7f53
+STEP 3/3: CMD ["cat", "/hello"]
+COMMIT hello
+--> a03c90e0fc62
+Successfully tagged localhost/hello:latest
+a03c90e0fc624ba8038896fae13768032bd6368ef970089b222c0a080cb62dbf
+built in a rootless container as root
+exit=0
+## build with a network step
+STEP 1/3: FROM docker.io/library/alpine:3.22
+Trying to pull docker.io/library/alpine:3.22...
+Getting image source signatures
+Copying blob sha256:53f8f5e03afd86ade91b7aa57a749f5a3d1419c113be5d8c10e7ee61bb5ab887
+Copying config sha256:c83674e1999044d33d751661371b873539f47e5b5c5ca3320c7e0377acca6238
+Writing manifest to image destination
+STEP 2/3: RUN apk add --no-cache jq && jq --version > /hello
+fetch https://dl-cdn.alpinelinux.org/alpine/v3.22/main/x86_64/APKINDEX.tar.gz
+WARNING: fetching https://dl-cdn.alpinelinux.org/alpine/v3.22/main: could not connect to server (check repositories file)
+fetch https://dl-cdn.alpinelinux.org/alpine/v3.22/community/x86_64/APKINDEX.tar.gz
+WARNING: fetching https://dl-cdn.alpinelinux.org/alpine/v3.22/community: could not connect to server (check repositories file)
+ERROR: unable to select packages:
+  jq (no such package):
+    required by: world[jq]
+Error: building at STEP "RUN apk add --no-cache jq && jq --version > /hello": while running runtime: exit status 1
+exit=1
+## the same with the documented recipe
+STEP 1/3: FROM docker.io/library/alpine:3.22
+STEP 2/3: RUN apk add --no-cache jq && jq --version > /hello
+fetch https://dl-cdn.alpinelinux.org/alpine/v3.22/main/x86_64/APKINDEX.tar.gz
+fetch https://dl-cdn.alpinelinux.org/alpine/v3.22/community/x86_64/APKINDEX.tar.gz
+(1/2) Installing oniguruma (6.9.10-r0)
+(2/2) Installing jq (1.8.2-r0)
+Executing busybox-1.37.0-r20.trigger
+OK: 8 MiB in 18 packages
+--> e01bcf2b7566
+STEP 3/3: CMD ["cat", "/hello"]
+COMMIT net2
+--> 837bd2ad616a
+Successfully tagged localhost/net2:latest
+837bd2ad616a5ce2afbfbbfbbb66d3611fdd3003554b2d7be1ff76cbb180f8ed
+jq-1.8.2
+exit=0
