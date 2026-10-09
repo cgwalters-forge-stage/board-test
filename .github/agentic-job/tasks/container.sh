@@ -34,7 +34,7 @@ cat > "$HOME/.config/fake-agent/demo.json" <<'JSON'
   {
     "execute": {
       "title": "Bash",
-      "command": "{ echo '## the same with --network=host'; podman build --network=host -t net2 -f ci/container/Containerfile.net ci/container && podman run --rm net2; echo \"exit=$?\"; } 2>&1 | tail -25 >> container-report.txt; true"
+      "command": "{ echo '## the same with the documented recipe'; podman build --network=host -v /etc/egress-proxy/ca-bundle.pem:/etc/ssl/certs/ca-certificates.crt:ro -t net2 -f ci/container/Containerfile.net ci/container && podman run --rm net2; echo \"exit=$?\"; } 2>&1 | tail -25 >> container-report.txt; true"
     }
   },
   {

@@ -14,23 +14,17 @@ cat > "$HOME/.config/fake-agent/demo.json" <<'JSON'
     }
   },
   {
-    "execute": {
-      "title": "Bash",
-      "command": "mkdir -p tests && printf '#!/bin/sh\\nset -eu\\nbash -n \"$(dirname \"$0\")/../ci/untrusted.sh\"\\necho ok\\n' > tests/untrusted.sh && sh tests/untrusted.sh"
-    }
-  },
-  {
     "write": {
       "title": "Write",
       "path": "{home}/out/safe-outputs.jsonl",
-      "content": "{\"type\":\"create_pull_request\",\"title\":\"tests: Check that ci/untrusted.sh parses\",\"body\":\"Closes #7\"}\n{\"type\":\"add_comment\",\"item_number\":7,\"body\":\"Proposed a change for this: tests: Check that ci/untrusted.sh parses\"}\n"
+      "content": "{\"type\":\"add_comment\",\"body\":\"Triage: known cost, not a bug here. The setup time is the sandbox setup the docs describe (two to five minutes on a hosted runner). Suggested labels: documentation, question.\"}\n"
     }
   },
   {
     "write": {
       "title": "Write",
       "path": "{home}/out/outcome.json",
-      "content": "{\"summary\":\"tests: Check that ci/untrusted.sh parses\",\"tests\":[],\"stopped_early\":null}\n"
+      "content": "{\"summary\": \"Triaged: a known cost.\", \"tests\": [], \"stopped_early\": null}\n"
     }
   },
   {

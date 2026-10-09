@@ -15,7 +15,7 @@ jobs:
   run:
     concurrency:
       group: agent-${{ inputs.item }}
-    uses: cgwalters-forge/agentic-job/.github/workflows/agentic-job.yml@45efe1233ce2ba8300318cb71fe6b866953972b6
+    uses: cgwalters-forge/agentic-job/.github/workflows/agentic-job.yml@75d6a5bbf7d38134221d8fd4662ae593c97ce872
     permissions:
       id-token: write
       contents: write

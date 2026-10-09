@@ -16,21 +16,21 @@ cat > "$HOME/.config/fake-agent/demo.json" <<'JSON'
   {
     "execute": {
       "title": "Bash",
-      "command": "sed -i s/recieve/receive/ docs/notes.md && git diff --stat"
+      "command": "sed -i 's/recieve/receive/' docs/notes.md"
     }
   },
   {
     "write": {
       "title": "Write",
       "path": "{home}/out/safe-outputs.jsonl",
-      "content": "{\"type\":\"create_pull_request\",\"title\":\"docs: Fix a typo in the notes\",\"body\":\"Closes #6\"}\n{\"type\":\"add_comment\",\"item_number\":6,\"body\":\"Proposed a change for this: docs: Fix a typo in the notes\"}\n"
+      "content": "{\"type\":\"create_pull_request\",\"title\":\"docs: Fix a typo in the notes\",\"body\":\"Closes #13\"}\n"
     }
   },
   {
     "write": {
       "title": "Write",
       "path": "{home}/out/outcome.json",
-      "content": "{\"summary\":\"docs: Fix a typo in the notes\",\"tests\":[],\"stopped_early\":null}\n"
+      "content": "{\"summary\": \"docs: Fix a typo in the notes\", \"tests\": [], \"stopped_early\": null}\n"
     }
   },
   {

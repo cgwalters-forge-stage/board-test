@@ -1,0 +1,12 @@
+# Bounds for the proposals caller: a lint job may file one issue and one comment.
+hosts = ["github.com"]
+repos = ["cgwalters-forge-stage/board-test"]
+bases = ["main"]
+max_outputs = 2
+max_patch_bytes = 1024
+max_patch_files = 1
+
+[outputs]
+create_issue = { max = 1 }
+add_comment = { max = 1 }
+noop = { max = 1 }

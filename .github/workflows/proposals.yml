@@ -1,0 +1,51 @@
+# A job with no agent hands requests to agentic-job's check and apply, after
+# docs/workflow.md "Proposals from a non-agent job".
+name: proposals
+on:
+  workflow_dispatch:
+    inputs:
+      allow:
+        description: The bounds file
+        type: string
+        default: .github/agentic-job/allow.toml
+      item:
+        description: Issue a comment goes to (empty for none)
+        type: string
+        default: ""
+permissions: {}
+jobs:
+  proposals:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: A lint that wants an issue filed
+        env:
+          ITEM: ${{ inputs.item }}
+        run: |
+          mkdir out
+          n=$(grep -c . docs/notes.md)
+          jq -cn --arg n "$n" '{type: "create_issue", title: "lint: docs/notes.md has \($n) lines and no heading check", body: "Filed by a lint job with no write token, through agentic-job check and apply."}' > out/outputs.jsonl
+          if [ -n "$ITEM" ]; then
+            jq -cn --argjson item "$ITEM" '{type: "add_comment", item_number: $item, body: "The lint job ran and filed its finding as an issue."}' >> out/outputs.jsonl
+          fi
+          cat out/outputs.jsonl
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: board-proposals
+          path: out/outputs.jsonl
+  apply:
+    needs: proposals # uploads outputs.jsonl as board-proposals
+    uses: cgwalters-forge/agentic-job/.github/workflows/agentic-job.yml@75d6a5bbf7d38134221d8fd4662ae593c97ce872
+    permissions:
+      contents: read
+      issues: write
+    with:
+      id: board
+      repo: cgwalters-forge-stage/board-test
+      allow: ${{ inputs.allow }}
+      outputs: create_issue,noop
+      proposals-artifact: board-proposals

@@ -16,21 +16,21 @@ cat > "$HOME/.config/fake-agent/demo.json" <<'JSON'
   {
     "execute": {
       "title": "Bash",
-      "command": "printf '\\nA staging area for agentic-job and agent-board.\\n' >> README.md"
+      "command": "printf '\\nTasks are issues on project 2, run by the dispatch workflow.\\n' >> README.md"
     }
   },
   {
     "write": {
       "title": "Write",
       "path": "{home}/out/safe-outputs.jsonl",
-      "content": "{\"type\":\"create_pull_request\",\"title\":\"docs: Say what this repository is for\",\"body\":\"Closes #5\"}\n{\"type\":\"add_comment\",\"item_number\":5,\"body\":\"Proposed a change for this: docs: Say what this repository is for\"}\n"
+      "content": "{\"type\":\"create_pull_request\",\"title\":\"README: Say how tasks are scheduled here\",\"body\":\"Closes #12\"}\n"
     }
   },
   {
     "write": {
       "title": "Write",
       "path": "{home}/out/outcome.json",
-      "content": "{\"summary\":\"docs: Say what this repository is for\",\"tests\":[],\"stopped_early\":null}\n"
+      "content": "{\"summary\": \"README: Say how tasks are scheduled here\", \"tests\": [], \"stopped_early\": null}\n"
     }
   },
   {

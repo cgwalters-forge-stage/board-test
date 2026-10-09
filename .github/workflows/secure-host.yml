@@ -14,7 +14,7 @@ jobs:
       # The default checkout, which leaves the job's token in .git/config.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - run: sudo apt-get update && sudo apt-get install -y podman uidmap   # root: before the step
-      - uses: cgwalters-forge/agentic-job/secure-host@45efe1233ce2ba8300318cb71fe6b866953972b6
+      - uses: cgwalters-forge/agentic-job/secure-host@75d6a5bbf7d38134221d8fd4662ae593c97ce872
       - name: The runner's user has no root
         run: |
           if sudo -n true; then echo "::error::sudo still works"; exit 1; fi

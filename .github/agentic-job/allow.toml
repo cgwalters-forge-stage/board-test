@@ -15,11 +15,6 @@ max_outputs = 5
 max_patch_bytes = 1048576
 max_patch_files = 50
 
-# README.md is on the default protected list; this repository lets a run change it.
-[unprotected_files]
-repos = ["cgwalters-forge-stage/board-test"]
-files = ["README.md"]
-
 # The output types a run may ask for, and the most of each.
 [outputs]
 create_pull_request = { max = 1 }
@@ -27,6 +22,16 @@ add_comment = { max = 1 }
 noop = { max = 1 }
 missing_tool = { max = 3 }
 missing_data = { max = 3 }
+
+# Default protected names include dependency manifests/lockfiles, README.md,
+# AGENTS.md, CLAUDE.md, CONTRIBUTING.md, SECURITY.md and CODEOWNERS.
+# Opt out only for exact repositories (no globs); see docs/safe-outputs.md.
+# [unprotected_files]
+# repos = ["OWNER/REPO"]
+# files = ["README.md"]
+# This cannot allow dot-folders, git internals, binaries, symlinks, submodules,
+# new executables, renames or mode changes. Add scripts without the executable
+# bit and invoke them with their interpreter instead.
 
 # Which events may start a run from this repository, and who may start
 # one (`agentic-job event`, docs/events.md). Without this table no event
