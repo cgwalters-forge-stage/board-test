@@ -146,6 +146,13 @@ jobs:
       review-item: ${{ inputs.kind == 'review' && inputs.item || '' }}
       inference-url: ${{ needs.target.outputs.agent != 'fake' && vars.INFERENCE_URL || '' }}
       inference-audience: ${{ needs.target.outputs.agent != 'fake' && vars.INFERENCE_AUDIENCE || '' }}
+      # Not in the shipped caller: the proxy is on a tailnet, and opencode
+      # takes the operator's configuration from a public repository.
+      tailscale-oauth-client-id: ${{ needs.target.outputs.agent != 'fake' && vars.TS_OAUTH_CLIENT_ID || '' }}
+      tailscale-audience: ${{ needs.target.outputs.agent != 'fake' && vars.TS_AUDIENCE || '' }}
+      tailscale-tags: ${{ needs.target.outputs.agent != 'fake' && 'tag:bootc-dev-sandbox' || '' }}
+      agent-config-repo: ${{ needs.target.outputs.agent == 'opencode' && vars.AGENT_CONFIG_REPO || '' }}
+      agent-config-path: ${{ needs.target.outputs.agent == 'opencode' && vars.AGENT_CONFIG_PATH || '' }}
       output-repo: ${{ inputs.repo }}
       comment-target: ${{ inputs.item }}
       apply-environment: ${{ !inputs.scripted && vars.APPLY_ENVIRONMENT || '' }}
