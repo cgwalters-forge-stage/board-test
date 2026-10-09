@@ -8,6 +8,10 @@ on:
         description: The bounds file
         type: string
         default: .github/agentic-job/allow.toml
+      outputs:
+        description: The output types asked for
+        type: string
+        default: create_issue,noop
       item:
         description: Issue a comment goes to (empty for none)
         type: string
@@ -43,9 +47,12 @@ jobs:
     permissions:
       contents: read
       issues: write
+      # Not in the docs' snippet: the workflow's agent job asks for it even
+      # though it is skipped, and the run fails at startup without it.
+      id-token: write
     with:
       id: board
       repo: cgwalters-forge-stage/board-test
       allow: ${{ inputs.allow }}
-      outputs: create_issue,noop
+      outputs: ${{ inputs.outputs }}
       proposals-artifact: board-proposals
