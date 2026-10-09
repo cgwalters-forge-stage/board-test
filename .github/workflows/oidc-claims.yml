@@ -1,0 +1,16 @@
+# Prints the claims (never the token) of the identity token a job here gets
+# for the tailnet's audience, to compare with the subject the tailnet trusts.
+name: oidc-claims
+on: workflow_dispatch
+permissions: {}
+jobs:
+  claims:
+    runs-on: ubuntu-24.04
+    permissions:
+      id-token: write
+    steps:
+      - env:
+          AUDIENCE: ${{ vars.TS_AUDIENCE }}
+        run: |
+          token=$(curl -sS -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=$AUDIENCE" | jq -r .value)
+          cut -d. -f2 <<<"$token" | tr '_-' '/+' | base64 -d 2>/dev/null | jq '{sub, aud, iss, repository, repository_id, repository_owner, repository_owner_id, ref, workflow_ref, job_workflow_ref, event_name}'
