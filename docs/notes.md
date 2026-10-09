@@ -5,4 +5,4 @@ receive their task from an issue and hand back a branch.
 
 Runs receive their task from an issue on the board.
 
-Tasks are recieved from the board and run by the dispatch workflow.
+Tasks are received from the board and run by the dispatch workflow.
