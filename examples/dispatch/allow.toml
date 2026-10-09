@@ -12,3 +12,9 @@ add_comment = { max = 1 }
 noop = { max = 1 }
 missing_tool = { max = 1 }
 missing_data = { max = 1 }
+
+# Run 37877738197 was refused for "protected files: README.md"; issue 12 asks
+# for a README line.
+[unprotected_files]
+repos = ["cgwalters-forge-stage/board-test"]
+files = ["README.md"]

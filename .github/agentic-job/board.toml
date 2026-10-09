@@ -1,4 +1,4 @@
-# Bounds for the proposals caller: a lint job may file one issue and one comment.
+# Bounds a board repair job would want: agent-board's proposal types.
 hosts = ["github.com"]
 repos = ["cgwalters-forge-stage/board-test"]
 bases = ["main"]
@@ -7,6 +7,6 @@ max_patch_bytes = 1024
 max_patch_files = 1
 
 [outputs]
-create_issue = { max = 1 }
-add_comment = { max = 1 }
+update_project = { max = 3 }
+close_issue = { max = 2 }
 noop = { max = 1 }

@@ -12,6 +12,10 @@ on:
         description: The output types asked for
         type: string
         default: create_issue,noop
+      file:
+        description: A committed proposals file to hand over as it is (empty for the lint's own)
+        type: string
+        default: ""
       item:
         description: Issue a comment goes to (empty for none)
         type: string
@@ -29,8 +33,10 @@ jobs:
       - name: A lint that wants an issue filed
         env:
           ITEM: ${{ inputs.item }}
+          FILE: ${{ inputs.file }}
         run: |
           mkdir out
+          if [ -n "$FILE" ]; then cp -- "$FILE" out/outputs.jsonl; cat out/outputs.jsonl; exit 0; fi
           n=$(grep -c . docs/notes.md)
           jq -cn --arg n "$n" '{type: "create_issue", title: "lint: docs/notes.md has \($n) lines and no heading check", body: "Filed by a lint job with no write token, through agentic-job check and apply."}' > out/outputs.jsonl
           if [ -n "$ITEM" ]; then
