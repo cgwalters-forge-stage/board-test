@@ -1,0 +1,31 @@
+# What a pull request's CI holds here, for cgwalters-forge/agentic-job#414:
+# it asks for write and OIDC permissions and prints what it got. A fork's
+# pull request gets a read-only token and no OIDC token.
+name: fork-evidence
+on:
+  pull_request:
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  id-token: write
+jobs:
+  show:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - env:
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          HEAD_IS_FORK: ${{ github.event.pull_request.head.repo.fork }}
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          echo "head repository: $HEAD_REPO"
+          echo "github.event.pull_request.head.repo.fork: $HEAD_IS_FORK"
+          echo "OIDC request URL present: ${ACTIONS_ID_TOKEN_REQUEST_URL:+yes}"
+          # A write with the job token: refused for a fork's pull request.
+          if gh api -X POST "repos/$GITHUB_REPOSITORY/issues/$PR/labels" -f 'labels[]=fork-evidence' >/dev/null 2>err; then
+            echo "write with the job token: accepted"
+          else
+            echo "write with the job token: refused ($(head -c 200 err))"
+          fi

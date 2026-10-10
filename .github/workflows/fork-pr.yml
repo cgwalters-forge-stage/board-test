@@ -1,0 +1,40 @@
+# Live validation of cgwalters-forge/agentic-job#414: the scripted agent
+# asks for a pull request, and apply opens it from a fork owned by the
+# account whose token the apply environment holds. No model, no proxy.
+name: fork-pr
+run-name: fork-pr ${{ inputs.item }}
+on:
+  workflow_dispatch:
+    inputs:
+      item:
+        description: A name for this run
+        type: string
+        default: fork-pr
+permissions: {}
+concurrency:
+  group: fork-pr-${{ inputs.item }}
+jobs:
+  run:
+    uses: cgwalters-forge/agentic-job/.github/workflows/agentic-job.yml@a5af2bba24589db54b96d37fcd962caf7e3a0ec3
+    secrets:
+      # The Main environment's secret is named PAT.
+      SAFE_OUTPUTS_PAT: ${{ secrets.PAT }}
+    permissions:
+      id-token: write
+      actions: read
+      contents: read
+      issues: write
+      pull-requests: write
+    with:
+      id: ${{ inputs.item }}
+      task: Scripted trial of a pull request from a fork.
+      repo: ${{ github.repository }}
+      outputs: create_pull_request,noop
+      allow: .github/agentic-job/allow.toml
+      config: .github/agentic-job/hosted.toml
+      agent: fake
+      fake-profile: implement
+      timeout: "10"
+      budget: "100"
+      max-requests: "0"
+      apply-environment: Main
