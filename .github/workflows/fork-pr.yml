@@ -15,7 +15,7 @@ concurrency:
   group: fork-pr-${{ inputs.item }}
 jobs:
   run:
-    uses: cgwalters-forge/agentic-job/.github/workflows/agentic-job.yml@a5af2bba24589db54b96d37fcd962caf7e3a0ec3
+    uses: cgwalters-forge/agentic-job/.github/workflows/agentic-job.yml@52f7406488e15656ee04d30ba85efdf4d6bb9441
     secrets:
       # The Main environment's secret is named PAT.
       SAFE_OUTPUTS_PAT: ${{ secrets.PAT }}
