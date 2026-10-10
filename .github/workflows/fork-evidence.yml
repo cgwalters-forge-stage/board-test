@@ -1,6 +1,7 @@
 # What a pull request's CI holds here, for cgwalters-forge/agentic-job#414:
 # it asks for write and OIDC permissions and prints what it got. A fork's
-# pull request gets a read-only token and no OIDC token.
+# pull request gets a read-only token and no OIDC token. (This line was
+# changed after the first run, so that the fork is behind in a workflow file.)
 name: fork-evidence
 on:
   pull_request:
