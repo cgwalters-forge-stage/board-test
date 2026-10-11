@@ -67,6 +67,57 @@ jobs:
           if sudo -n true; then echo "sudo: works"; else echo "sudo: refused"; fi
           sudo -n -l 2>&1 | tail -5 || true
           if docker info > /dev/null 2>&1; then echo "docker: answers"; else echo "docker: gone"; fi
+      - name: "11: the runner's processes, from the sandbox"
+        id: c11
+        continue-on-error: true
+        run: |
+          # Booleans only: never the contents of any of these files.
+          t() { if "$@" > /dev/null 2>&1; then echo true; else echo false; fi; }
+          opens() { ( exec 3< "$1" ); }
+          echo "as $(id -un)"
+          for name in Runner.Worker Runner.Listener; do
+            pids=""
+            for c in /proc/[0-9]*/comm; do
+              if [ "$(cat "$c" 2> /dev/null || true)" = "$name" ]; then p=${c#/proc/}; pids="$pids ${p%/comm}"; fi
+            done
+            if [ -z "$pids" ]; then echo "$name visible: false"; continue; fi
+            for pid in $pids; do
+              echo "$name visible: true"
+              echo "$name environ test -r: $(t test -r "/proc/$pid/environ")"
+              echo "$name environ read one byte: $(t head -c1 "/proc/$pid/environ")"
+              echo "$name mem open for reading: $(t opens "/proc/$pid/mem")"
+              echo "$name cmdline read one byte: $(t head -c1 "/proc/$pid/cmdline")"
+              echo "$name root listable: $(t ls "/proc/$pid/root/")"
+            done
+          done
+          echo "ptrace_scope: $(cat /proc/sys/kernel/yama/ptrace_scope 2> /dev/null || echo unreadable)"
+          echo "sudo -n true: $(t sudo -n true)"
+      - name: "11: the runner's processes, from the runner user (control)"
+        id: c11bash
+        continue-on-error: true
+        shell: bash
+        run: |
+          # Booleans only: never the contents of any of these files.
+          t() { if "$@" > /dev/null 2>&1; then echo true; else echo false; fi; }
+          opens() { ( exec 3< "$1" ); }
+          echo "as $(id -un)"
+          for name in Runner.Worker Runner.Listener; do
+            pids=""
+            for c in /proc/[0-9]*/comm; do
+              if [ "$(cat "$c" 2> /dev/null || true)" = "$name" ]; then p=${c#/proc/}; pids="$pids ${p%/comm}"; fi
+            done
+            if [ -z "$pids" ]; then echo "$name visible: false"; continue; fi
+            for pid in $pids; do
+              echo "$name visible: true"
+              echo "$name environ test -r: $(t test -r "/proc/$pid/environ")"
+              echo "$name environ read one byte: $(t head -c1 "/proc/$pid/environ")"
+              echo "$name mem open for reading: $(t opens "/proc/$pid/mem")"
+              echo "$name cmdline read one byte: $(t head -c1 "/proc/$pid/cmdline")"
+              echo "$name root listable: $(t ls "/proc/$pid/root/")"
+            done
+          done
+          echo "ptrace_scope: $(cat /proc/sys/kernel/yama/ptrace_scope 2> /dev/null || echo unreadable)"
+          echo "sudo -n true: $(t sudo -n true)"
       - name: "4: file commands from the sandbox"
         id: c4
         continue-on-error: true
