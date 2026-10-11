@@ -1,0 +1,303 @@
+# An experiment for cgwalters-forge/agentic-job#446: what happens when a
+# job makes the sandbox the default shell of its `run:` steps. Each case
+# is a step of its own and expected failures continue, so one does not
+# hide the next; the last step of the main job prints every outcome.
+name: exp-default-shell
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+env:
+  SECURE_HOST_NOTE: agentic-job main at c87601a64f5a84529eba998bc0b44ec233e4e3a3
+jobs:
+  main:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: agentic-job sandbox exec --stdin {0} -- bash -eo pipefail -s
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: "2a: default shell before secure-host"
+        id: c2a
+        continue-on-error: true
+        run: id; pwd; echo hello
+      - name: "2b: shell bash before secure-host"
+        id: c2b
+        continue-on-error: true
+        shell: bash
+        run: |
+          id; pwd; echo hello
+          if sudo -n true; then echo "sudo: works"; else echo "sudo: refused"; fi
+      - name: "10: secure-host"
+        id: host
+        uses: cgwalters-forge/agentic-job/secure-host@c87601a64f5a84529eba998bc0b44ec233e4e3a3
+      - name: "1: default shell after secure-host"
+        id: c1
+        continue-on-error: true
+        env:
+          STEP_ENV: visible
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          id; pwd; echo hello
+          echo "HOME=$HOME PATH=$PATH"
+          echo "env names: $(env | cut -d= -f1 | sort | tr '\n' ' ')"
+          for v in STEP_ENV GITHUB_TOKEN ACTIONS_RUNTIME_TOKEN ACTIONS_RUNTIME_URL ACTIONS_RESULTS_URL ACTIONS_CACHE_URL ACTIONS_ID_TOKEN_REQUEST_URL ACTIONS_ID_TOKEN_REQUEST_TOKEN GITHUB_WORKSPACE GITHUB_OUTPUT GITHUB_ENV GITHUB_STEP_SUMMARY GITHUB_ACTIONS CI RUNNER_TEMP; do
+            if [ -n "${!v+x}" ]; then echo "var $v: SET"; else echo "var $v: absent"; fi
+          done
+          ls -la ${{ github.workspace }} || echo "workspace ls: rc=$?"
+          cat ${{ github.workspace }}/README.md || echo "workspace read: rc=$?"
+          ls /home/runner || echo "runner home ls: rc=$?"
+          if sudo -n true; then echo "sudo: works"; else echo "sudo: refused"; fi
+      - name: "3: shell bash after secure-host (control for 1)"
+        id: c3
+        continue-on-error: true
+        shell: bash
+        env:
+          STEP_ENV: visible
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          id; pwd; echo hello
+          for v in STEP_ENV GITHUB_TOKEN ACTIONS_RUNTIME_TOKEN ACTIONS_RUNTIME_URL ACTIONS_RESULTS_URL ACTIONS_CACHE_URL ACTIONS_ID_TOKEN_REQUEST_URL ACTIONS_ID_TOKEN_REQUEST_TOKEN GITHUB_WORKSPACE GITHUB_OUTPUT GITHUB_ENV GITHUB_STEP_SUMMARY GITHUB_ACTIONS CI RUNNER_TEMP; do
+            if [ -n "${!v+x}" ]; then echo "var $v: SET"; else echo "var $v: absent"; fi
+          done
+          head -1 README.md
+          if sudo -n true; then echo "sudo: works"; else echo "sudo: refused"; fi
+          sudo -n -l 2>&1 | tail -5 || true
+          if docker info > /dev/null 2>&1; then echo "docker: answers"; else echo "docker: gone"; fi
+      - name: "4: file commands from the sandbox"
+        id: c4
+        continue-on-error: true
+        run: |
+          echo "GITHUB_OUTPUT=${GITHUB_OUTPUT-<unset>} GITHUB_ENV=${GITHUB_ENV-<unset>} GITHUB_STEP_SUMMARY=${GITHUB_STEP_SUMMARY-<unset>}"
+          echo "k=v" >> "$GITHUB_OUTPUT" || echo "write GITHUB_OUTPUT: rc=$?"
+          echo "EXP_K=v" >> "$GITHUB_ENV" || echo "write GITHUB_ENV: rc=$?"
+          echo "summary from sandbox" >> "$GITHUB_STEP_SUMMARY" || echo "write GITHUB_STEP_SUMMARY: rc=$?"
+          ls -la ${{ runner.temp }}/_runner_file_commands || echo "ls _runner_file_commands: rc=$?"
+          ls -ld ${{ runner.temp }} || echo "ls runner.temp: rc=$?"
+          for f in ${{ runner.temp }}/_runner_file_commands/*; do echo "k2=v2" >> "$f" || echo "write $f: rc=$?"; done
+      - name: "4: what a later trusted step sees"
+        id: c4see
+        continue-on-error: true
+        shell: bash
+        run: |
+          echo "steps.c4.outputs.k=[${{ steps.c4.outputs.k }}] k2=[${{ steps.c4.outputs.k2 }}] EXP_K=[${EXP_K-<unset>}] k2 env=[${k2-<unset>}]"
+          ls -la "$RUNNER_TEMP/_runner_file_commands"
+      - name: "5: workflow commands on the sandbox's stdout"
+        id: c5
+        continue-on-error: true
+        run: |
+          echo "::warning::exp446 warning from sandbox"
+          echo "::error::exp446 error from sandbox"
+          echo "::notice file=README.md,line=1::exp446 notice from sandbox"
+          echo "::add-mask::secretvalue"
+          echo "::set-output name=a::b"
+          echo "::save-state name=a::b"
+          echo "::debug::exp446 debug from sandbox"
+          echo "::group::exp446 group from sandbox"
+          echo "inside group"
+          echo "::endgroup::"
+          echo "::warning::exp446 warning on stderr" >&2
+          echo "::stop-commands::tok"
+          echo "::warning::exp446 warning after stop-commands"
+          echo "::set-output name=stopped::yes"
+          echo "::tok::"
+          echo "::warning::exp446 warning after resume"
+          echo "masked here? secretvalue"
+      - name: "5: what a later trusted step sees"
+        id: c5see
+        continue-on-error: true
+        shell: bash
+        run: |
+          echo "steps.c5.outputs.a=[${{ steps.c5.outputs.a }}] stopped=[${{ steps.c5.outputs.stopped }}]"
+          echo "trusted step prints: secretvalue"
+          echo "STATE_a=[${STATE_a-<unset>}]"
+      - name: "5b: set-env and add-path from the sandbox"
+        id: c5b
+        continue-on-error: true
+        run: |
+          echo "::set-env name=EXP_INJECT::1"
+          echo "::add-path::/tmp/exp446"
+          echo "after the two commands"
+      - name: "5b: what a later trusted step sees"
+        id: c5bsee
+        continue-on-error: true
+        shell: bash
+        run: |
+          echo "EXP_INJECT=[${EXP_INJECT-<unset>}]"
+          case ":$PATH:" in *:/tmp/exp446:*) echo "PATH: has /tmp/exp446";; *) echo "PATH: unchanged";; esac
+      - name: "7: local composite action"
+        id: c7
+        continue-on-error: true
+        uses: ./.github/actions/exp-composite
+      - name: "8: JavaScript action"
+        id: c8
+        continue-on-error: true
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        env:
+          SANDBOX_HOME: ${{ steps.host.outputs.sandbox-home }}
+        with:
+          script: |
+            const fs = require('fs');
+            const os = require('os');
+            core.info(`js action uid=${process.getuid()} user=${os.userInfo().username} cwd=${process.cwd()}`);
+            core.info(`js action has ACTIONS_RUNTIME_TOKEN: ${'ACTIONS_RUNTIME_TOKEN' in process.env}`);
+            const home = process.env.SANDBOX_HOME;
+            try {
+              core.info(`js action reads ${home}: ${fs.readdirSync(home).join(' ')}`);
+            } catch (e) {
+              core.info(`js action cannot read ${home}: ${e.code}`);
+            }
+      - name: "9a: here-doc, set -x, expression"
+        id: c9a
+        continue-on-error: true
+        run: |
+          set -x
+          cat <<EOF2
+          heredoc line one, run ${{ github.run_id }}
+          heredoc line two, user $(id -un)
+          EOF2
+          echo "expression: repo=${{ github.repository }} event=${{ github.event_name }}"
+      - name: "9b: failing command mid-script"
+        id: c9b
+        continue-on-error: true
+        run: |
+          echo "before"
+          false
+          echo "after: must not print"
+      - name: "9c: pipefail"
+        id: c9c
+        continue-on-error: true
+        run: |
+          echo "before"
+          false | true
+          echo "after: must not print"
+      - name: "9d: exit 3"
+        id: c9d
+        continue-on-error: true
+        run: |
+          echo "before"
+          exit 3
+      - name: "9e: line number of an error (sandbox)"
+        id: c9e
+        continue-on-error: true
+        run: |
+          echo "line 1"
+
+          echo "line 3"
+          exp446_no_such_command on line 4
+      - name: "9e: line number of an error (bash, control)"
+        id: c9ebash
+        continue-on-error: true
+        shell: bash
+        run: |
+          echo "line 1"
+
+          echo "line 3"
+          exp446_no_such_command on line 4
+      - name: "9f: a command that reads stdin"
+        id: c9f
+        continue-on-error: true
+        run: |
+          echo "before"
+          cat
+          echo "after: executed, or eaten by cat?"
+      - name: "always: default shell at the end"
+        id: cend
+        if: always()
+        continue-on-error: true
+        run: echo "always step as $(id -un)"
+      - name: Outcomes
+        if: always()
+        shell: bash
+        env:
+          STEPS: ${{ toJSON(steps) }}
+        run: |
+          jq -r 'to_entries[] | "\(.key): outcome=\(.value.outcome) conclusion=\(.value.conclusion)"' <<< "$STEPS"
+
+  # 6: secure-host skipped. Nothing installed the binary.
+  skipped:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
+    defaults:
+      run:
+        shell: agentic-job sandbox exec --stdin {0} -- bash -eo pipefail -s
+    steps:
+      - name: secure-host, skipped
+        if: false
+        uses: cgwalters-forge/agentic-job/secure-host@c87601a64f5a84529eba998bc0b44ec233e4e3a3
+      - name: "6a: cleanup, default shell"
+        id: c6a
+        if: always()
+        continue-on-error: true
+        run: echo "cleanup as $(id -un)"
+      - name: "6b: cleanup, shell bash"
+        id: c6b
+        if: always()
+        continue-on-error: true
+        shell: bash
+        run: |
+          echo "cleanup as $(id -un)"
+          command -v agentic-job || echo "agentic-job: not on PATH"
+      - name: "6c: cleanup, default shell, no continue-on-error"
+        if: always()
+        run: echo "cleanup as $(id -un)"
+      - name: Outcomes
+        if: always()
+        shell: bash
+        env:
+          STEPS: ${{ toJSON(steps) }}
+        run: |
+          jq -r 'to_entries[] | "\(.key): outcome=\(.value.outcome) conclusion=\(.value.conclusion)"' <<< "$STEPS"
+
+  # 6: secure-host failed after it installed the binary and before setup.
+  failed:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        shell: agentic-job sandbox exec --stdin {0} -- bash -eo pipefail -s
+    steps:
+      - name: secure-host, failing on its configuration
+        id: host
+        continue-on-error: true
+        uses: cgwalters-forge/agentic-job/secure-host@c87601a64f5a84529eba998bc0b44ec233e4e3a3
+        with:
+          config: exp446-no-such-file.toml
+      - name: "6d: cleanup, default shell"
+        id: c6d
+        if: always()
+        continue-on-error: true
+        run: echo "cleanup as $(id -un)"
+      - name: "6e: cleanup, shell bash"
+        id: c6e
+        if: always()
+        continue-on-error: true
+        shell: bash
+        run: |
+          echo "cleanup as $(id -un)"; command -v agentic-job || echo "agentic-job: not on PATH"
+          if sudo -n true; then echo "sudo: works"; else echo "sudo: refused"; fi
+      - name: Outcomes
+        if: always()
+        shell: bash
+        env:
+          STEPS: ${{ toJSON(steps) }}
+        run: |
+          jq -r 'to_entries[] | "\(.key): outcome=\(.value.outcome) conclusion=\(.value.conclusion)"' <<< "$STEPS"
+
+  # 7: does an inner step with no shell take the job's default?
+  composite-noshell:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: "7b: composite whose inner step has no shell"
+        continue-on-error: true
+        uses: ./.github/actions/exp-composite-noshell

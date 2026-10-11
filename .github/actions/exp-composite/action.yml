@@ -1,0 +1,13 @@
+# Used by exp-default-shell.yml: which user do a composite's inner steps
+# run as when the calling job's default shell is the sandbox one?
+name: exp-composite
+description: Inner run steps of a composite action, one per shell
+runs:
+  using: composite
+  steps:
+    - name: inner, shell bash
+      shell: bash
+      run: echo "composite inner shell=bash -> $(id)"
+    - name: inner, shell sandbox
+      shell: agentic-job sandbox exec --stdin {0} -- bash -eo pipefail -s
+      run: echo "composite inner shell=sandbox -> $(id)"

@@ -1,0 +1,8 @@
+# Used by exp-default-shell.yml: an inner step with no shell of its own.
+name: exp-composite-noshell
+description: A composite action whose inner run step declares no shell
+runs:
+  using: composite
+  steps:
+    - name: inner, no shell
+      run: echo "composite inner without shell -> $(id)"
